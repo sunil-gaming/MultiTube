@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Multi YouTube Player</title>
   <script src="https://www.youtube.com/iframe_api"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     /* --- Global Styles --- */
     * {
@@ -105,6 +105,7 @@
       color: #7289da;
       text-decoration: none;
       transition: transform 0.2s, color 0.2s;
+      z-index: 9999;
     }
 
     .discord-link:hover {
@@ -115,7 +116,7 @@
 </head>
 <body>
 
-  <a class="discord-link" href="https://discord.gg/pc3hazBxBB" target="_blank" title="Join our Discord!">
+  <a class="discord-link" href="https://discord.gg/yourservercode" target="_blank" title="Join our Discord!">
     <i class="fab fa-discord"></i>
   </a>
 
@@ -137,7 +138,6 @@
 
   <script>
     let players = [];
-    let playersReadyCount = 0;
     let ytApiReady = false;
 
     function extractVideoID(url) {
@@ -169,7 +169,6 @@
       const container = document.getElementById('players');
       container.innerHTML = '';
       players = [];
-      playersReadyCount = 0;
 
       for (let i = 0; i < count; i++) {
         const wrapper = document.createElement('div');
@@ -190,13 +189,17 @@
             controls: 1,
             mute: 1,
             modestbranding: 1,
+            playsinline: 1
           },
           events: {
             onReady: (event) => {
               event.target.mute();
-              event.target.setPlaybackQuality('small');
               event.target.playVideo();
-              playersReadyCount++;
+            },
+            onStateChange: (event) => {
+              if (event.data === YT.PlayerState.PAUSED) {
+                setTimeout(() => event.target.playVideo(), 500);
+              }
             },
             onError: (event) => {
               console.error('Player error:', event.data);
