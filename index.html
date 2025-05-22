@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Multi YouTube Player with Full URL</title>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <style>
+    body {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    #players {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .player-container {
+      border: 1px solid #ccc;
+      padding: 5px;
+      box-sizing: border-box;
+      width: 320px;
+      height: 180px;
+    }
+    label, button, input {
+      font-size: 16px;
+      margin-right: 10px;
+      margin-bottom: 5px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<label for="videoURL">YouTube Video URL:</label>
+<input type="text" id="videoURL" placeholder="https://youtu.be/-rU9WUzfZZo" size="50" />
+
+<label for="numVideos">Number of Videos:</label>
+<input type="number" id="numVideos" min="1" max="20" value="3" />
+
+<button id="loadBtn">Load Videos</button>
+
+<div id="players"></div>
+
+<script>
+  let players = [];
+  let playersReadyCount = 0;
+  let ytApiReady = false;
+
+  // Extract YouTube video ID from full URL
+  function extractVideoID(url) {
+    // Common YouTube URL formats regex
+    const regex = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  }
+
+  function onYouTubeIframeAPIReady() {
+    ytApiReady = true;
+    console.log('YouTube IFrame API ready');
+  }
+
+  function loadVideos() {
+    if (!ytApiReady) {
+      console.log('Waiting for YouTube API...');
+      setTimeout(loadVideos, 300);
+      return;
+    }
+
+    const urlInput = document.getElementById('videoURL').value.trim();
+    const videoId = extractVideoID(urlInput);
+    if (!videoId) {
+      alert('Please enter a valid YouTube video URL!');
+      return;
+    }
+
+    let count = parseInt(document.getElementById('numVideos').value);
+    if (isNaN(count) || count < 1) {
+      console.warn('Invalid number of videos, defaulting to 1');
+      count = 1;
+    } else if (count > 20) {
+      console.warn('Number too large, max 20. Setting to 20');
+      count = 20;
+    }
+
+    const container = document.getElementById('players');
+    container.innerHTML = '';
+    players = [];
+    playersReadyCount = 0;
+
+    for (let i = 0; i < count; i++) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'player-container';
+      wrapper.id = 'player-wrapper-' + i;
+
+      const playerDiv = document.createElement('div');
+      playerDiv.id = 'player-' + i;
+      wrapper.appendChild(playerDiv);
+      container.appendChild(wrapper);
+
+      players[i] = new YT.Player(playerDiv.id, {
+        height: '180',
+        width: '320',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          mute: 1,
+          modestbranding: 1,
+        },
+        events: {
+          onReady: (event) => {
+            event.target.mute();
+            event.target.setPlaybackQuality('small'); // Request lowest quality (144p)
+            event.target.playVideo();
+
+            playersReadyCount++;
+            if (playersReadyCount === count) {
+              console.log('144');  // All players ready
+            }
+          },
+          onError: (event) => {
+            console.error('Player error:', event.data);
+          }
+        }
+      });
+    }
+  }
+
+  document.getElementById('loadBtn').addEventListener('click', loadVideos);
+</script>
+
+</body>
+</html>
