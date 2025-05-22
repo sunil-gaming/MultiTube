@@ -2,136 +2,212 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Multi YouTube Player with Full URL</title>
+  <title>Multi YouTube Player</title>
   <script src="https://www.youtube.com/iframe_api"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    body {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 10px;
-      font-family: Arial, sans-serif;
+    /* --- Global Styles --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
+
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2rem;
+      color: #00ffcc;
+      text-shadow: 0 0 5px #00ffcc88;
+    }
+
+    label, input, button {
+      font-size: 1rem;
+      margin: 8px 0;
+      display: block;
+      color: #ddd;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      padding: 8px;
+      background-color: #1e1e1e;
+      color: white;
+      border: 1px solid #333;
+      border-radius: 4px;
+      width: 300px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #00ffcc;
+      border: none;
+      border-radius: 4px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #00cca3;
+    }
+
     #players {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 15px;
+      gap: 15px;
+      margin-top: 30px;
+      justify-content: center;
     }
+
     .player-container {
-      border: 1px solid #ccc;
-      padding: 5px;
-      box-sizing: border-box;
-      width: 320px;
-      height: 180px;
+      border: 2px solid #00ffcc33;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform 0.2s;
+      box-shadow: 0 0 10px #00ffcc33;
     }
-    label, button, input {
-      font-size: 16px;
-      margin-right: 10px;
-      margin-bottom: 5px;
-      display: block;
+
+    .player-container:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 15px #00ffcc88;
+    }
+
+    /* Footer watermark */
+    footer {
+      margin-top: auto;
+      padding: 20px;
+      color: #888;
+      font-size: 0.9rem;
+      text-align: center;
+      border-top: 1px solid #333;
+      width: 100%;
+    }
+
+    /* Discord link */
+    .discord-link {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      font-size: 1.5rem;
+      color: #7289da;
+      text-decoration: none;
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .discord-link:hover {
+      color: #99aab5;
+      transform: scale(1.2);
     }
   </style>
 </head>
 <body>
 
-<label for="videoURL">YouTube Video URL:</label>
-<input type="text" id="videoURL" placeholder="https://youtu.be/-rU9WUzfZZo" size="50" />
+  <a class="discord-link" href="https://discord.gg/pc3hazBxBB" target="_blank" title="Join our Discord!">
+    <i class="fab fa-discord"></i>
+  </a>
 
-<label for="numVideos">Number of Videos:</label>
-<input type="number" id="numVideos" min="1" max="20" value="3" />
+  <h1>Multi YouTube Player</h1>
 
-<button id="loadBtn">Load Videos</button>
+  <label for="videoURL">YouTube Video URL:</label>
+  <input type="text" id="videoURL" placeholder="https://youtu.be/-rU9WUzfZZo" />
 
-<div id="players"></div>
+  <label for="numVideos">Number of Videos:</label>
+  <input type="number" id="numVideos" min="1" max="20" value="3" />
 
-<script>
-  let players = [];
-  let playersReadyCount = 0;
-  let ytApiReady = false;
+  <button id="loadBtn">Load Videos</button>
 
-  // Extract YouTube video ID from full URL
-  function extractVideoID(url) {
-    // Common YouTube URL formats regex
-    const regex = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-  }
+  <div id="players"></div>
 
-  function onYouTubeIframeAPIReady() {
-    ytApiReady = true;
-    console.log('YouTube IFrame API ready');
-  }
+  <footer>
+    Made by <strong>SunilGaming</strong>
+  </footer>
 
-  function loadVideos() {
-    if (!ytApiReady) {
-      console.log('Waiting for YouTube API...');
-      setTimeout(loadVideos, 300);
-      return;
+  <script>
+    let players = [];
+    let playersReadyCount = 0;
+    let ytApiReady = false;
+
+    function extractVideoID(url) {
+      const regex = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
     }
 
-    const urlInput = document.getElementById('videoURL').value.trim();
-    const videoId = extractVideoID(urlInput);
-    if (!videoId) {
-      alert('Please enter a valid YouTube video URL!');
-      return;
+    function onYouTubeIframeAPIReady() {
+      ytApiReady = true;
     }
 
-    let count = parseInt(document.getElementById('numVideos').value);
-    if (isNaN(count) || count < 1) {
-      console.warn('Invalid number of videos, defaulting to 1');
-      count = 1;
-    } else if (count > 20) {
-      console.warn('Number too large, max 20. Setting to 20');
-      count = 20;
-    }
+    function loadVideos() {
+      if (!ytApiReady) {
+        setTimeout(loadVideos, 300);
+        return;
+      }
 
-    const container = document.getElementById('players');
-    container.innerHTML = '';
-    players = [];
-    playersReadyCount = 0;
+      const urlInput = document.getElementById('videoURL').value.trim();
+      const videoId = extractVideoID(urlInput);
+      if (!videoId) {
+        alert('Please enter a valid YouTube video URL!');
+        return;
+      }
 
-    for (let i = 0; i < count; i++) {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'player-container';
-      wrapper.id = 'player-wrapper-' + i;
+      let count = parseInt(document.getElementById('numVideos').value);
+      count = Math.min(Math.max(count, 1), 20);
 
-      const playerDiv = document.createElement('div');
-      playerDiv.id = 'player-' + i;
-      wrapper.appendChild(playerDiv);
-      container.appendChild(wrapper);
+      const container = document.getElementById('players');
+      container.innerHTML = '';
+      players = [];
+      playersReadyCount = 0;
 
-      players[i] = new YT.Player(playerDiv.id, {
-        height: '180',
-        width: '320',
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 1,
-          mute: 1,
-          modestbranding: 1,
-        },
-        events: {
-          onReady: (event) => {
-            event.target.mute();
-            event.target.setPlaybackQuality('small'); // Request lowest quality (144p)
-            event.target.playVideo();
+      for (let i = 0; i < count; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'player-container';
+        wrapper.id = 'player-wrapper-' + i;
 
-            playersReadyCount++;
-            if (playersReadyCount === count) {
-              console.log('144');  // All players ready
-            }
+        const playerDiv = document.createElement('div');
+        playerDiv.id = 'player-' + i;
+        wrapper.appendChild(playerDiv);
+        container.appendChild(wrapper);
+
+        players[i] = new YT.Player(playerDiv.id, {
+          height: '180',
+          width: '320',
+          videoId: videoId,
+          playerVars: {
+            autoplay: 1,
+            controls: 1,
+            mute: 1,
+            modestbranding: 1,
           },
-          onError: (event) => {
-            console.error('Player error:', event.data);
+          events: {
+            onReady: (event) => {
+              event.target.mute();
+              event.target.setPlaybackQuality('small');
+              event.target.playVideo();
+              playersReadyCount++;
+            },
+            onError: (event) => {
+              console.error('Player error:', event.data);
+            }
           }
-        }
-      });
+        });
+      }
     }
-  }
 
-  document.getElementById('loadBtn').addEventListener('click', loadVideos);
-</script>
+    document.getElementById('loadBtn').addEventListener('click', loadVideos);
+  </script>
 
 </body>
 </html>
